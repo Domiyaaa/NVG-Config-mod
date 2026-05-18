@@ -1,6 +1,7 @@
 # NVG-Config-mod
 ### Improved NVG for the video game nuclear option.
-Options for green phosphor, white phosphor, monochrome, and full color NVG.
+Options for green phosphor, white phosphor, monochrome, and full color NVG. 
+<sub>also alien technology</sub>
 ### Includes 3 additional build in NVG filters.
 <img width="2559" height="1599" alt="12341234" src="https://github.com/user-attachments/assets/29c0a2b6-120c-44bc-afd3-5f3ccac84fce" />
 
