@@ -10,13 +10,19 @@ public enum NVGMode
     GreenPhosphor,
     WhitePhosphor,
     Monochrome,
-    FullColor
+    FullColor,
+    Custom
 }
 
 [BepInPlugin("com.Domiyaa.NVGConfig", "NVG Config", "1.0.0")]
 public class NVGConfigPlugin : BaseUnityPlugin
 {
     public static ConfigEntry<NVGMode> SelectedNVGMode;
+    public static ConfigEntry<float> CustomSaturation;
+    public static ConfigEntry<float> CustomContrast;
+    public static ConfigEntry<float> CustomColorR;
+    public static ConfigEntry<float> CustomColorG;
+    public static ConfigEntry<float> CustomColorB;
     public static BepInEx.Logging.ManualLogSource Log;
 
     private void Awake()
@@ -29,10 +35,46 @@ public class NVGConfigPlugin : BaseUnityPlugin
             NVGMode.GreenPhosphor
         );
 
-        var harmony = new Harmony("com.Domiyaa.NVGConfigNVG");
+        // Custom filter sliders — only active when Custom mode is selected
+        CustomSaturation = Config.Bind(
+            "Custom Filter",
+            "Saturation",
+            0f,
+            new ConfigDescription("Custom saturation value.", new AcceptableValueRange<float>(-100f, 100f))
+        );
+
+        CustomContrast = Config.Bind(
+            "Custom Filter",
+            "Contrast",
+            0f,
+            new ConfigDescription("Custom contrast value.", new AcceptableValueRange<float>(-100f, 100f))
+        );
+
+        CustomColorR = Config.Bind(
+            "Custom Filter",
+            "Colour Filter R",
+            1f,
+            new ConfigDescription("Red channel of colour filter.", new AcceptableValueRange<float>(0f, 1f))
+        );
+
+        CustomColorG = Config.Bind(
+            "Custom Filter",
+            "Colour Filter G",
+            1f,
+            new ConfigDescription("Green channel of colour filter.", new AcceptableValueRange<float>(0f, 1f))
+        );
+
+        CustomColorB = Config.Bind(
+            "Custom Filter",
+            "Colour Filter B",
+            1f,
+            new ConfigDescription("Blue channel of colour filter.", new AcceptableValueRange<float>(0f, 1f))
+        );
+
+        var harmony = new Harmony("com.Domiyaa.NVGConfig");
         harmony.PatchAll();
 
-        Logger.LogInfo("White Phosphor NVG loaded");
+        Logger.LogInfo("NVG Config loaded");
     }
 }
 
@@ -40,7 +82,7 @@ public class NVGConfigPlugin : BaseUnityPlugin
 public class NightVision_Start_Patch
 {
     static void Postfix(NightVision __instance)
-    {;
+    {
         Volume postProcessing = Traverse.Create(__instance).Field("postProcessing").GetValue<Volume>();
 
         if (postProcessing == null)
@@ -95,7 +137,7 @@ public class NightVision_Update_Patch
             {
                 colorAdjustments.saturation.value = -80f;
                 colorAdjustments.contrast.value = 40f;
-                colorAdjustments.colorFilter.value = new Color(0.0f, 0.8f, 0.8f);
+                colorAdjustments.colorFilter.value = new Color(0.0f, 0.6f, 0.9f);
                 colorAdjustments.hueShift.value = origHueShift;
             }
             else if (mode == NVGMode.Monochrome)
@@ -112,6 +154,17 @@ public class NightVision_Update_Patch
                 colorAdjustments.colorFilter.value = Color.white;
                 colorAdjustments.hueShift.value = origHueShift;
             }
+            else if (mode == NVGMode.Custom)
+            {
+                colorAdjustments.saturation.value = NVGConfigPlugin.CustomSaturation.Value;
+                colorAdjustments.contrast.value = NVGConfigPlugin.CustomContrast.Value;
+                colorAdjustments.colorFilter.value = new Color(
+                    NVGConfigPlugin.CustomColorR.Value,
+                    NVGConfigPlugin.CustomColorG.Value,
+                    NVGConfigPlugin.CustomColorB.Value
+                );
+                colorAdjustments.hueShift.value = origHueShift;
+            }
         }
         else
         {
@@ -122,3 +175,4 @@ public class NightVision_Update_Patch
         }
     }
 }
+
