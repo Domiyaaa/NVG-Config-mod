@@ -83,13 +83,11 @@ public class NightVision_Start_Patch
 {
     static void Postfix(NightVision __instance)
     {
-        // Use FieldRef for zero-allocation field access
         Volume postProcessing = NightVision_Update_Patch.PostProcessingRef(__instance);
 
         if (postProcessing == null)
             return;
 
-        // Read game's already-resolved ColorAdjustments directly — no TryGet scan
         ColorAdjustments colorAdjustments = NightVision_Update_Patch.ColorAdjustmentsRef(__instance);
 
         if (colorAdjustments == null)
@@ -123,9 +121,10 @@ public class NightVision_Update_Patch
     public static Color origColorFilter;
     public static float origHueShift;
 
-    // Dirty tracking — only write when something actually changed
+    // Dirty tracking
     private static NVGMode lastMode = NVGMode.GreenPhosphor;
     private static bool lastNightVisActive = false;
+    private static float lastCustSat, lastCustCon, lastCustR, lastCustG, lastCustB;
 
     static void Postfix(NightVision __instance)
     {
@@ -135,14 +134,30 @@ public class NightVision_Update_Patch
         NVGMode mode = NVGConfigPlugin.SelectedNVGMode.Value;
         bool nightVisActive = NightVisActiveRef(__instance);
 
+        // Read custom values into locals — no repeated .Value calls below
+        float cS = NVGConfigPlugin.CustomSaturation.Value;
+        float cC = NVGConfigPlugin.CustomContrast.Value;
+        float cR = NVGConfigPlugin.CustomColorR.Value;
+        float cG = NVGConfigPlugin.CustomColorG.Value;
+        float cB = NVGConfigPlugin.CustomColorB.Value;
+
+        // Custom mode needs live updates when sliders change in Configuration Manager
+        bool customChanged = nightVisActive && mode == NVGMode.Custom &&
+            (cS != lastCustSat || cC != lastCustCon ||
+             cR != lastCustR || cG != lastCustG || cB != lastCustB);
+
         // Skip if nothing changed since last frame
-        if (mode == lastMode && nightVisActive == lastNightVisActive)
+        if (mode == lastMode && nightVisActive == lastNightVisActive && !customChanged)
             return;
 
         lastMode = mode;
         lastNightVisActive = nightVisActive;
+        lastCustSat = cS;
+        lastCustCon = cC;
+        lastCustR = cR;
+        lastCustG = cG;
+        lastCustB = cB;
 
-        // Zero-allocation field read — no TryGet scan
         ColorAdjustments colorAdjustments = ColorAdjustmentsRef(__instance);
 
         if (colorAdjustments == null)
@@ -187,13 +202,9 @@ public class NightVision_Update_Patch
             }
             else if (mode == NVGMode.Custom)
             {
-                colorAdjustments.saturation.value = NVGConfigPlugin.CustomSaturation.Value;
-                colorAdjustments.contrast.value = NVGConfigPlugin.CustomContrast.Value;
-                colorAdjustments.colorFilter.value = new Color(
-                    NVGConfigPlugin.CustomColorR.Value,
-                    NVGConfigPlugin.CustomColorG.Value,
-                    NVGConfigPlugin.CustomColorB.Value
-                );
+                colorAdjustments.saturation.value = cS;
+                colorAdjustments.contrast.value = cC;
+                colorAdjustments.colorFilter.value = new Color(cR, cG, cB);
                 colorAdjustments.hueShift.value = origHueShift;
             }
         }
