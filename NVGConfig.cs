@@ -14,7 +14,7 @@ public enum NVGMode
     Custom
 }
 
-[BepInPlugin("com.Domiyaa.NVGConfig", "NVG Config", "1.0.0")]
+[BepInPlugin("com.Domiyaa.NVGConfig", "NVG Config", "1.1.0")]
 public class NVGConfigPlugin : BaseUnityPlugin
 {
     public static ConfigEntry<NVGMode> SelectedNVGMode;
