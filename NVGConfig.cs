@@ -11,6 +11,7 @@ public enum NVGMode
     WhitePhosphor,
     Monochrome,
     FullColor,
+    AlienTechnology,
     Custom
 }
 
@@ -152,6 +153,13 @@ public class NightVision_Update_Patch
                 colorAdjustments.saturation.value = 40f;
                 colorAdjustments.contrast.value = 15f;
                 colorAdjustments.colorFilter.value = Color.white;
+                colorAdjustments.hueShift.value = origHueShift;
+            }
+            else if (mode == NVGMode.AlienTechnology)
+            {
+                colorAdjustments.saturation.value = -80f;
+                colorAdjustments.contrast.value = 40f;
+                colorAdjustments.colorFilter.value = new Color(0.8f, 0.0f, 0.9f);
                 colorAdjustments.hueShift.value = origHueShift;
             }
             else if (mode == NVGMode.Custom)
