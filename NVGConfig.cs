@@ -36,7 +36,6 @@ public class NVGConfigPlugin : BaseUnityPlugin
             NVGMode.GreenPhosphor
         );
 
-        // Custom filter sliders — only active when Custom mode is selected
         CustomSaturation = Config.Bind(
             "Custom Filter",
             "Saturation",
@@ -84,12 +83,16 @@ public class NightVision_Start_Patch
 {
     static void Postfix(NightVision __instance)
     {
-        Volume postProcessing = Traverse.Create(__instance).Field("postProcessing").GetValue<Volume>();
+        // Use FieldRef for zero-allocation field access
+        Volume postProcessing = NightVision_Update_Patch.PostProcessingRef(__instance);
 
         if (postProcessing == null)
             return;
 
-        if (!postProcessing.profile.TryGet<ColorAdjustments>(out var colorAdjustments))
+        // Read game's already-resolved ColorAdjustments directly — no TryGet scan
+        ColorAdjustments colorAdjustments = NightVision_Update_Patch.ColorAdjustmentsRef(__instance);
+
+        if (colorAdjustments == null)
             return;
 
         NightVision_Update_Patch.origSaturation = colorAdjustments.saturation.value;
@@ -103,11 +106,26 @@ public class NightVision_Start_Patch
 [HarmonyPatch(typeof(NightVision), "Update")]
 public class NightVision_Update_Patch
 {
+    // FieldRef delegates — compiled once at type load, zero per-call allocation
+    public static readonly AccessTools.FieldRef<NightVision, bool> NightVisActiveRef =
+        AccessTools.FieldRefAccess<NightVision, bool>("nightVisActive");
+
+    public static readonly AccessTools.FieldRef<NightVision, Volume> PostProcessingRef =
+        AccessTools.FieldRefAccess<NightVision, Volume>("postProcessing");
+
+    public static readonly AccessTools.FieldRef<NightVision, ColorAdjustments> ColorAdjustmentsRef =
+        AccessTools.FieldRefAccess<NightVision, ColorAdjustments>("colorAdjustments");
+
+    // Cached original values
     public static bool cached = false;
     public static float origSaturation;
     public static float origContrast;
     public static Color origColorFilter;
     public static float origHueShift;
+
+    // Dirty tracking — only write when something actually changed
+    private static NVGMode lastMode = NVGMode.GreenPhosphor;
+    private static bool lastNightVisActive = false;
 
     static void Postfix(NightVision __instance)
     {
@@ -115,14 +133,19 @@ public class NightVision_Update_Patch
             return;
 
         NVGMode mode = NVGConfigPlugin.SelectedNVGMode.Value;
+        bool nightVisActive = NightVisActiveRef(__instance);
 
-        bool nightVisActive = Traverse.Create(__instance).Field("nightVisActive").GetValue<bool>();
-        Volume postProcessing = Traverse.Create(__instance).Field("postProcessing").GetValue<Volume>();
-
-        if (postProcessing == null)
+        // Skip if nothing changed since last frame
+        if (mode == lastMode && nightVisActive == lastNightVisActive)
             return;
 
-        if (!postProcessing.profile.TryGet<ColorAdjustments>(out var colorAdjustments))
+        lastMode = mode;
+        lastNightVisActive = nightVisActive;
+
+        // Zero-allocation field read — no TryGet scan
+        ColorAdjustments colorAdjustments = ColorAdjustmentsRef(__instance);
+
+        if (colorAdjustments == null)
             return;
 
         if (nightVisActive)
@@ -183,4 +206,3 @@ public class NightVision_Update_Patch
         }
     }
 }
-
