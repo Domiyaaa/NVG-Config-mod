@@ -8,5 +8,5 @@ Options for green phosphor, white phosphor, monochrome, and full color NVG.
 <img width="604" height="258" alt="1234132441323" src="https://github.com/user-attachments/assets/6c2d8179-065c-40ab-acb9-61e4e2d70845" />
 
 ### Entirely client side (multiplayer compatible)
-Requires the usage of the built in bepinex configmanager (f1)
+Requires the usage of the built in bepinex configmanager [F1]
 
